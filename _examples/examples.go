@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/corona10/goimagehash"
 	"image/jpeg"
 	"os"
+
+	"github.com/albert-wang/goimagehash"
 )
 
 func main() {

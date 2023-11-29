@@ -22,7 +22,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v1
       with:
-        path: src/github.com/corona10/goimagehash
+        path: src/github.com/albert-wang/goimagehash
 
     - name: Install
       run: go get -t -v ./...

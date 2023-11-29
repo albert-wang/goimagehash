@@ -9,8 +9,8 @@ import (
 	"image"
 	"sync"
 
-	"github.com/corona10/goimagehash/etcs"
-	"github.com/corona10/goimagehash/transforms"
+	"github.com/albert-wang/goimagehash/etcs"
+	"github.com/albert-wang/goimagehash/transforms"
 	"github.com/nfnt/resize"
 )
 
@@ -112,25 +112,50 @@ func ExtPerceptionHash(img image.Image, width, height int) (*ExtImageHash, error
 	}
 	var phash []uint64
 	resized := resize.Resize(uint(imgSize), uint(imgSize), img, resize.Bilinear)
-	pixels := transforms.Rgb2Gray(resized)
-	dct := transforms.DCT2D(pixels, imgSize, imgSize)
-	flattens := transforms.FlattenPixels(dct, width, height)
-	median := etcs.MedianOfPixels(flattens)
 
-	lenOfUnit := 64
-	if imgSize%lenOfUnit == 0 {
-		phash = make([]uint64, imgSize/lenOfUnit)
-	} else {
-		phash = make([]uint64, imgSize/lenOfUnit+1)
-	}
-	for idx, p := range flattens {
-		indexOfArray := idx / lenOfUnit
-		indexOfBit := lenOfUnit - idx%lenOfUnit - 1
-		if p > median {
-			phash[indexOfArray] |= 1 << uint(indexOfBit)
+	if imgSize == 256 && width == 16 && height == 16 {
+		buffer := make([]float64, 256*256)
+
+		transforms.Rgb2GrayFast(resized, &buffer)
+		flattens := transforms.DCT2DFast256(&buffer)
+		median := etcs.MedianOfPixelsFast256(flattens[:])
+
+		lenOfUnit := 64
+		if imgSize%lenOfUnit == 0 {
+			phash = make([]uint64, imgSize/lenOfUnit)
+		} else {
+			phash = make([]uint64, imgSize/lenOfUnit+1)
 		}
+		for idx, p := range flattens {
+			indexOfArray := idx / lenOfUnit
+			indexOfBit := lenOfUnit - idx%lenOfUnit - 1
+			if p > median {
+				phash[indexOfArray] |= 1 << uint(indexOfBit)
+			}
+		}
+		return NewExtImageHash(phash, PHash, imgSize), nil
+	} else {
+
+		pixels := transforms.Rgb2Gray(resized)
+		dct := transforms.DCT2D(pixels, imgSize, imgSize)
+		flattens := transforms.FlattenPixels(dct, width, height)
+		median := etcs.MedianOfPixels(flattens)
+
+		lenOfUnit := 64
+		if imgSize%lenOfUnit == 0 {
+			phash = make([]uint64, imgSize/lenOfUnit)
+		} else {
+			phash = make([]uint64, imgSize/lenOfUnit+1)
+		}
+		for idx, p := range flattens {
+			indexOfArray := idx / lenOfUnit
+			indexOfBit := lenOfUnit - idx%lenOfUnit - 1
+			if p > median {
+				phash[indexOfArray] |= 1 << uint(indexOfBit)
+			}
+		}
+		return NewExtImageHash(phash, PHash, imgSize), nil
 	}
-	return NewExtImageHash(phash, PHash, imgSize), nil
 }
 
 // ExtAverageHash function returns ahash of which the size can be set larger than uint64

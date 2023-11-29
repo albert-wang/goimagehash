@@ -15,7 +15,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v1
       with:
-        path: src/github.com/corona10/goimagehash
+        path: src/github.com/albert-wang/goimagehash
 
     - name: Test
       run: go test ./...
